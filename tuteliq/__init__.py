@@ -36,6 +36,8 @@ from tuteliq.models import (
     ReportMessage,
     RecordConsentInput,
     RectifyDataInput,
+    CreateWebhookInput,
+    UpdateWebhookInput,
     # Result types
     BullyingResult,
     GroomingResult,
@@ -45,6 +47,30 @@ from tuteliq.models import (
     ActionPlanResult,
     ReportResult,
     Usage,
+    # Voice/Image types
+    TranscriptionSegment,
+    TranscriptionResult,
+    VoiceAnalysisResult,
+    VisionResult,
+    ImageAnalysisResult,
+    # Webhook types
+    Webhook,
+    WebhookListResult,
+    CreateWebhookResult,
+    UpdateWebhookResult,
+    DeleteWebhookResult,
+    TestWebhookResult,
+    RegenerateSecretResult,
+    # Pricing types
+    PricingPlan,
+    PricingResult,
+    PricingDetailPlan,
+    PricingDetailsResult,
+    # Usage types
+    UsageDay,
+    UsageHistoryResult,
+    UsageByToolResult,
+    UsageMonthlyResult,
     # Account types (GDPR)
     AccountDeletionResult,
     AccountExportResult,
@@ -64,9 +90,11 @@ from tuteliq.errors import (
     ServerError,
     TimeoutError,
     NetworkError,
+    QuotaExceededError,
+    TierAccessError,
 )
 
-__version__ = "1.1.0"
+__version__ = "2.1.0"
 __all__ = [
     # Client
     "Tuteliq",
@@ -94,6 +122,8 @@ __all__ = [
     "ReportMessage",
     "RecordConsentInput",
     "RectifyDataInput",
+    "CreateWebhookInput",
+    "UpdateWebhookInput",
     # Result types
     "BullyingResult",
     "GroomingResult",
@@ -103,6 +133,30 @@ __all__ = [
     "ActionPlanResult",
     "ReportResult",
     "Usage",
+    # Voice/Image types
+    "TranscriptionSegment",
+    "TranscriptionResult",
+    "VoiceAnalysisResult",
+    "VisionResult",
+    "ImageAnalysisResult",
+    # Webhook types
+    "Webhook",
+    "WebhookListResult",
+    "CreateWebhookResult",
+    "UpdateWebhookResult",
+    "DeleteWebhookResult",
+    "TestWebhookResult",
+    "RegenerateSecretResult",
+    # Pricing types
+    "PricingPlan",
+    "PricingResult",
+    "PricingDetailPlan",
+    "PricingDetailsResult",
+    # Usage types
+    "UsageDay",
+    "UsageHistoryResult",
+    "UsageByToolResult",
+    "UsageMonthlyResult",
     # Account types (GDPR)
     "AccountDeletionResult",
     "AccountExportResult",
@@ -121,4 +175,6 @@ __all__ = [
     "ServerError",
     "TimeoutError",
     "NetworkError",
+    "QuotaExceededError",
+    "TierAccessError",
 ]

@@ -1,6 +1,7 @@
 """Tuteliq API client."""
 
 import asyncio
+import json
 from typing import Any, Optional, Union
 
 import httpx
@@ -9,7 +10,9 @@ from tuteliq.errors import (
     AuthenticationError,
     NetworkError,
     NotFoundError,
+    QuotaExceededError,
     RateLimitError,
+    TierAccessError,
     TuteliqError,
     ServerError,
     TimeoutError,
@@ -35,6 +38,9 @@ from tuteliq.models import (
     ConsentActionResult,
     ConsentStatusResult,
     ConsentType,
+    CreateWebhookInput,
+    CreateWebhookResult,
+    DeleteWebhookResult,
     DetectBullyingInput,
     DetectGroomingInput,
     DetectUnsafeInput,
@@ -43,14 +49,26 @@ from tuteliq.models import (
     GenerateReportInput,
     GetActionPlanInput,
     GroomingResult,
+    ImageAnalysisResult,
     LogBreachInput,
     LogBreachResult,
+    PricingDetailsResult,
+    PricingResult,
     RecordConsentInput,
     RectifyDataInput,
     RectifyDataResult,
+    RegenerateSecretResult,
     RiskLevel,
+    TestWebhookResult,
     UnsafeResult,
     UpdateBreachInput,
+    UpdateWebhookInput,
+    UpdateWebhookResult,
+    UsageByToolResult,
+    UsageHistoryResult,
+    UsageMonthlyResult,
+    VoiceAnalysisResult,
+    WebhookListResult,
     ReportResult,
     Usage,
 )
@@ -72,6 +90,21 @@ class Tuteliq:
     """
 
     BASE_URL = "https://api.tuteliq.ai"
+    _SDK_IDENTIFIER = "Python SDK"
+
+    @staticmethod
+    def _resolve_platform(platform: Optional[str] = None) -> str:
+        """Resolve platform identifier with SDK tag.
+
+        Args:
+            platform: Optional platform name from the caller.
+
+        Returns:
+            Platform string always including the SDK identifier.
+        """
+        if platform and len(platform) > 0:
+            return f"{platform} - {Tuteliq._SDK_IDENTIFIER}"
+        return Tuteliq._SDK_IDENTIFIER
 
     def __init__(
         self,
@@ -159,8 +192,9 @@ class Tuteliq:
             input_data = content_or_input
 
         body: dict[str, Any] = {"text": input_data.content}
-        if input_data.context:
-            body["context"] = input_data.context.to_dict()
+        ctx = input_data.context.to_dict() if input_data.context else {}
+        ctx["platform"] = self._resolve_platform(ctx.get("platform"))
+        body["context"] = ctx
         if input_data.external_id:
             body["external_id"] = input_data.external_id
         if input_data.metadata:
@@ -192,8 +226,8 @@ class Tuteliq:
             context["child_age"] = input_data.child_age
         if input_data.context:
             context.update(input_data.context.to_dict())
-        if context:
-            body["context"] = context
+        context["platform"] = self._resolve_platform(context.get("platform"))
+        body["context"] = context
 
         if input_data.external_id:
             body["external_id"] = input_data.external_id
@@ -233,8 +267,9 @@ class Tuteliq:
             input_data = content_or_input
 
         body: dict[str, Any] = {"text": input_data.content}
-        if input_data.context:
-            body["context"] = input_data.context.to_dict()
+        ctx = input_data.context.to_dict() if input_data.context else {}
+        ctx["platform"] = self._resolve_platform(ctx.get("platform"))
+        body["context"] = ctx
         if input_data.external_id:
             body["external_id"] = input_data.external_id
         if input_data.metadata:
@@ -407,8 +442,9 @@ class Tuteliq:
                 for msg in input_data.messages
             ]
 
-        if input_data.context:
-            body["context"] = input_data.context.to_dict()
+        ctx = input_data.context.to_dict() if input_data.context else {}
+        ctx["platform"] = self._resolve_platform(ctx.get("platform"))
+        body["context"] = ctx
         if input_data.external_id:
             body["external_id"] = input_data.external_id
         if input_data.metadata:
@@ -677,6 +713,279 @@ class Tuteliq:
         return BreachResult.from_dict(data)
 
     # =========================================================================
+    # Voice Analysis
+    # =========================================================================
+
+    async def analyze_voice(
+        self,
+        file: bytes,
+        filename: str,
+        *,
+        analysis_type: str = "all",
+        file_id: Optional[str] = None,
+        external_id: Optional[str] = None,
+        customer_id: Optional[str] = None,
+        metadata: Optional[dict[str, Any]] = None,
+        age_group: Optional[str] = None,
+        language: Optional[str] = None,
+        platform: Optional[str] = None,
+        child_age: Optional[int] = None,
+    ) -> VoiceAnalysisResult:
+        """Analyze voice/audio content for safety issues.
+
+        Args:
+            file: Raw audio file bytes.
+            filename: Original filename (e.g. "audio.wav").
+            analysis_type: Type of analysis ("all", "transcription", "safety").
+            file_id: Optional file identifier.
+            external_id: Your identifier for correlation.
+            customer_id: Customer identifier.
+            metadata: Custom metadata.
+            age_group: Age group of the speaker.
+            language: Language hint for transcription.
+            platform: Platform identifier.
+            child_age: Age of the child.
+
+        Returns:
+            VoiceAnalysisResult with transcription and safety analysis.
+        """
+        fields: dict[str, Any] = {
+            "analysis_type": analysis_type,
+            "platform": self._resolve_platform(platform),
+        }
+        if file_id:
+            fields["file_id"] = file_id
+        if external_id:
+            fields["external_id"] = external_id
+        if customer_id:
+            fields["customer_id"] = customer_id
+        if metadata:
+            fields["metadata"] = json.dumps(metadata)
+        if age_group:
+            fields["age_group"] = age_group
+        if language:
+            fields["language"] = language
+        if child_age is not None:
+            fields["child_age"] = str(child_age)
+
+        files = {"file": (filename, file, "application/octet-stream")}
+        data = await self._multipart_request("/api/v1/safety/voice", fields, files)
+        return VoiceAnalysisResult.from_dict(data)
+
+    # =========================================================================
+    # Image Analysis
+    # =========================================================================
+
+    async def analyze_image(
+        self,
+        file: bytes,
+        filename: str,
+        *,
+        analysis_type: str = "all",
+        file_id: Optional[str] = None,
+        external_id: Optional[str] = None,
+        customer_id: Optional[str] = None,
+        metadata: Optional[dict[str, Any]] = None,
+        age_group: Optional[str] = None,
+        platform: Optional[str] = None,
+    ) -> ImageAnalysisResult:
+        """Analyze image content for safety issues.
+
+        Args:
+            file: Raw image file bytes.
+            filename: Original filename (e.g. "photo.jpg").
+            analysis_type: Type of analysis ("all", "vision", "safety").
+            file_id: Optional file identifier.
+            external_id: Your identifier for correlation.
+            customer_id: Customer identifier.
+            metadata: Custom metadata.
+            age_group: Age group context.
+            platform: Platform identifier.
+
+        Returns:
+            ImageAnalysisResult with vision and safety analysis.
+        """
+        fields: dict[str, Any] = {
+            "analysis_type": analysis_type,
+            "platform": self._resolve_platform(platform),
+        }
+        if file_id:
+            fields["file_id"] = file_id
+        if external_id:
+            fields["external_id"] = external_id
+        if customer_id:
+            fields["customer_id"] = customer_id
+        if metadata:
+            fields["metadata"] = json.dumps(metadata)
+        if age_group:
+            fields["age_group"] = age_group
+
+        files = {"file": (filename, file, "application/octet-stream")}
+        data = await self._multipart_request("/api/v1/safety/image", fields, files)
+        return ImageAnalysisResult.from_dict(data)
+
+    # =========================================================================
+    # Webhooks
+    # =========================================================================
+
+    async def list_webhooks(self) -> WebhookListResult:
+        """List all webhooks for the current account.
+
+        Returns:
+            WebhookListResult with list of configured webhooks.
+        """
+        data = await self._request("GET", "/api/v1/webhooks")
+        return WebhookListResult.from_dict(data)
+
+    async def create_webhook(self, input: CreateWebhookInput) -> CreateWebhookResult:
+        """Create a new webhook.
+
+        Args:
+            input: Webhook URL, events, and active status.
+
+        Returns:
+            CreateWebhookResult with the created webhook.
+        """
+        body: dict[str, Any] = {
+            "url": input.url,
+            "events": input.events,
+            "active": input.active,
+        }
+        data = await self._request("POST", "/api/v1/webhooks", body)
+        return CreateWebhookResult.from_dict(data)
+
+    async def update_webhook(
+        self, webhook_id: str, input: UpdateWebhookInput
+    ) -> UpdateWebhookResult:
+        """Update an existing webhook.
+
+        Args:
+            webhook_id: The webhook ID.
+            input: Fields to update.
+
+        Returns:
+            UpdateWebhookResult with the updated webhook.
+        """
+        body: dict[str, Any] = {}
+        if input.url is not None:
+            body["url"] = input.url
+        if input.events is not None:
+            body["events"] = input.events
+        if input.active is not None:
+            body["active"] = input.active
+        data = await self._request("PATCH", f"/api/v1/webhooks/{webhook_id}", body)
+        return UpdateWebhookResult.from_dict(data)
+
+    async def delete_webhook(self, webhook_id: str) -> DeleteWebhookResult:
+        """Delete a webhook.
+
+        Args:
+            webhook_id: The webhook ID.
+
+        Returns:
+            DeleteWebhookResult with confirmation message.
+        """
+        data = await self._request("DELETE", f"/api/v1/webhooks/{webhook_id}")
+        return DeleteWebhookResult.from_dict(data)
+
+    async def test_webhook(self, webhook_id: str) -> TestWebhookResult:
+        """Send a test event to a webhook.
+
+        Args:
+            webhook_id: The webhook ID.
+
+        Returns:
+            TestWebhookResult with delivery status.
+        """
+        data = await self._request("POST", f"/api/v1/webhooks/{webhook_id}/test")
+        return TestWebhookResult.from_dict(data)
+
+    async def regenerate_webhook_secret(
+        self, webhook_id: str
+    ) -> RegenerateSecretResult:
+        """Regenerate the signing secret for a webhook.
+
+        Args:
+            webhook_id: The webhook ID.
+
+        Returns:
+            RegenerateSecretResult with the new secret.
+        """
+        data = await self._request(
+            "POST", f"/api/v1/webhooks/{webhook_id}/regenerate-secret"
+        )
+        return RegenerateSecretResult.from_dict(data)
+
+    # =========================================================================
+    # Pricing
+    # =========================================================================
+
+    async def get_pricing(self) -> PricingResult:
+        """Get pricing overview.
+
+        Returns:
+            PricingResult with available plans.
+        """
+        data = await self._request("GET", "/api/v1/pricing")
+        return PricingResult.from_dict(data)
+
+    async def get_pricing_details(self) -> PricingDetailsResult:
+        """Get detailed pricing information.
+
+        Returns:
+            PricingDetailsResult with full plan details.
+        """
+        data = await self._request("GET", "/api/v1/pricing/details")
+        return PricingDetailsResult.from_dict(data)
+
+    # =========================================================================
+    # Usage
+    # =========================================================================
+
+    async def get_usage_history(
+        self, *, days: Optional[int] = None
+    ) -> UsageHistoryResult:
+        """Get daily usage history.
+
+        Args:
+            days: Number of days to retrieve (default: API default).
+
+        Returns:
+            UsageHistoryResult with daily usage breakdown.
+        """
+        params: dict[str, str] = {}
+        if days is not None:
+            params["days"] = str(days)
+        data = await self._request("GET", "/api/v1/usage/history", params=params)
+        return UsageHistoryResult.from_dict(data)
+
+    async def get_usage_by_tool(
+        self, *, date: Optional[str] = None
+    ) -> UsageByToolResult:
+        """Get usage breakdown by tool/endpoint.
+
+        Args:
+            date: Date to query (YYYY-MM-DD format, default: today).
+
+        Returns:
+            UsageByToolResult with per-tool usage counts.
+        """
+        params: dict[str, str] = {}
+        if date is not None:
+            params["date"] = date
+        data = await self._request("GET", "/api/v1/usage/by-tool", params=params)
+        return UsageByToolResult.from_dict(data)
+
+    async def get_usage_monthly(self) -> UsageMonthlyResult:
+        """Get monthly usage summary with billing and rate limit info.
+
+        Returns:
+            UsageMonthlyResult with tier, billing, and usage details.
+        """
+        data = await self._request("GET", "/api/v1/usage/monthly")
+        return UsageMonthlyResult.from_dict(data)
+
+    # =========================================================================
     # Private Methods
     # =========================================================================
 
@@ -685,14 +994,17 @@ class Tuteliq:
         method: str,
         path: str,
         body: Optional[dict[str, Any]] = None,
+        *,
+        params: Optional[dict[str, str]] = None,
     ) -> dict[str, Any]:
         """Make an API request with retry logic."""
         last_error: Optional[Exception] = None
 
         for attempt in range(self._max_retries):
             try:
-                return await self._perform_request(method, path, body)
-            except (AuthenticationError, ValidationError, NotFoundError):
+                return await self._perform_request(method, path, body, params=params)
+            except (AuthenticationError, ValidationError, NotFoundError,
+                    QuotaExceededError, TierAccessError):
                 # Don't retry these errors
                 raise
             except Exception as e:
@@ -703,15 +1015,89 @@ class Tuteliq:
 
         raise last_error or TuteliqError("Request failed after retries")
 
+    async def _multipart_request(
+        self,
+        path: str,
+        fields: dict[str, Any],
+        files: dict[str, tuple[str, bytes, str]],
+    ) -> dict[str, Any]:
+        """Send a multipart/form-data request with retry logic.
+
+        Args:
+            path: API endpoint path.
+            fields: Form fields as key-value pairs.
+            files: File fields as {name: (filename, content, content_type)}.
+
+        Returns:
+            Parsed JSON response.
+        """
+        last_error: Optional[Exception] = None
+
+        for attempt in range(self._max_retries):
+            try:
+                return await self._perform_multipart_request(path, fields, files)
+            except (AuthenticationError, ValidationError, NotFoundError,
+                    QuotaExceededError, TierAccessError):
+                raise
+            except Exception as e:
+                last_error = e
+                if attempt < self._max_retries - 1:
+                    delay = self._retry_delay * (2 ** attempt)
+                    await asyncio.sleep(delay)
+
+        raise last_error or TuteliqError("Request failed after retries")
+
+    async def _perform_multipart_request(
+        self,
+        path: str,
+        fields: dict[str, Any],
+        files: dict[str, tuple[str, bytes, str]],
+    ) -> dict[str, Any]:
+        """Perform a single multipart/form-data request."""
+        try:
+            response = await self._client.post(
+                path,
+                data=fields,
+                files=files,
+                headers={"Content-Type": None},  # Let httpx set multipart boundary
+            )
+        except httpx.TimeoutException:
+            raise TimeoutError(f"Request timed out after {self._timeout} seconds")
+        except httpx.NetworkError as e:
+            raise NetworkError(str(e))
+
+        # Extract metadata from headers
+        self.last_request_id = response.headers.get("x-request-id")
+
+        # Monthly usage headers
+        limit = response.headers.get("x-monthly-limit")
+        used = response.headers.get("x-monthly-used")
+        remaining = response.headers.get("x-monthly-remaining")
+
+        if limit and used and remaining:
+            self.usage = Usage(
+                limit=int(limit),
+                used=int(used),
+                remaining=int(remaining),
+            )
+
+        # Handle errors
+        if not response.is_success:
+            self._handle_error_response(response)
+
+        return response.json()
+
     async def _perform_request(
         self,
         method: str,
         path: str,
         body: Optional[dict[str, Any]] = None,
+        *,
+        params: Optional[dict[str, str]] = None,
     ) -> dict[str, Any]:
         """Perform a single API request."""
         try:
-            response = await self._client.request(method, path, json=body)
+            response = await self._client.request(method, path, json=body, params=params)
         except httpx.TimeoutException:
             raise TimeoutError(f"Request timed out after {self._timeout} seconds")
         except httpx.NetworkError as e:
@@ -754,6 +1140,10 @@ class Tuteliq:
             raise ValidationError(message, details)
         elif status == 401:
             raise AuthenticationError(message, details)
+        elif status == 402:
+            raise QuotaExceededError(message, details)
+        elif status == 403:
+            raise TierAccessError(message, details)
         elif status == 404:
             raise NotFoundError(message, details)
         elif status == 429:

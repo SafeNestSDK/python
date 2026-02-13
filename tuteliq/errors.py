@@ -56,3 +56,15 @@ class NetworkError(TuteliqError):
     """Raised when a network error occurs."""
 
     pass
+
+
+class QuotaExceededError(TuteliqError):
+    """Raised when monthly quota is exceeded."""
+
+    pass
+
+
+class TierAccessError(TuteliqError):
+    """Raised when the endpoint requires a higher tier."""
+
+    pass

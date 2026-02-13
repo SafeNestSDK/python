@@ -751,3 +751,437 @@ class BreachResult:
         return cls(
             breach=BreachRecord.from_dict(data["breach"]),
         )
+
+
+# =============================================================================
+# Voice Analysis
+# =============================================================================
+
+
+@dataclass
+class TranscriptionSegment:
+    """A segment of transcribed audio."""
+
+    start: float
+    end: float
+    text: str
+
+
+@dataclass
+class TranscriptionResult:
+    """Result from audio transcription."""
+
+    text: str
+    language: Optional[str] = None
+    duration: Optional[float] = None
+    segments: Optional[list[TranscriptionSegment]] = None
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "TranscriptionResult":
+        """Create from API response dictionary."""
+        segments = None
+        if "segments" in data and data["segments"]:
+            segments = [
+                TranscriptionSegment(s["start"], s["end"], s["text"])
+                for s in data["segments"]
+            ]
+        return cls(
+            text=data["text"],
+            language=data.get("language"),
+            duration=data.get("duration"),
+            segments=segments,
+        )
+
+
+@dataclass
+class VoiceAnalysisResult:
+    """Result from voice/audio analysis."""
+
+    file_id: Optional[str] = None
+    transcription: Optional[TranscriptionResult] = None
+    analysis: Optional[dict[str, Any]] = None
+    overall_risk_score: Optional[float] = None
+    overall_severity: Optional[str] = None
+    external_id: Optional[str] = None
+    customer_id: Optional[str] = None
+    metadata: Optional[dict[str, Any]] = None
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "VoiceAnalysisResult":
+        """Create from API response dictionary."""
+        transcription = None
+        if "transcription" in data and data["transcription"]:
+            transcription = TranscriptionResult.from_dict(data["transcription"])
+        return cls(
+            file_id=data.get("file_id"),
+            transcription=transcription,
+            analysis=data.get("analysis"),
+            overall_risk_score=data.get("overall_risk_score"),
+            overall_severity=data.get("overall_severity"),
+            external_id=data.get("external_id"),
+            customer_id=data.get("customer_id"),
+            metadata=data.get("metadata"),
+        )
+
+
+# =============================================================================
+# Image Analysis
+# =============================================================================
+
+
+@dataclass
+class VisionResult:
+    """Result from visual analysis of an image."""
+
+    extracted_text: Optional[str] = None
+    visual_categories: Optional[list[str]] = None
+    visual_severity: Optional[str] = None
+    visual_confidence: Optional[float] = None
+    visual_description: Optional[str] = None
+    contains_text: Optional[bool] = None
+    contains_faces: Optional[bool] = None
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "VisionResult":
+        """Create from API response dictionary."""
+        return cls(
+            extracted_text=data.get("extracted_text"),
+            visual_categories=data.get("visual_categories"),
+            visual_severity=data.get("visual_severity"),
+            visual_confidence=data.get("visual_confidence"),
+            visual_description=data.get("visual_description"),
+            contains_text=data.get("contains_text"),
+            contains_faces=data.get("contains_faces"),
+        )
+
+
+@dataclass
+class ImageAnalysisResult:
+    """Result from image analysis."""
+
+    file_id: Optional[str] = None
+    vision: Optional[VisionResult] = None
+    text_analysis: Optional[dict[str, Any]] = None
+    overall_risk_score: Optional[float] = None
+    overall_severity: Optional[str] = None
+    external_id: Optional[str] = None
+    customer_id: Optional[str] = None
+    metadata: Optional[dict[str, Any]] = None
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "ImageAnalysisResult":
+        """Create from API response dictionary."""
+        vision = None
+        if "vision" in data and data["vision"]:
+            vision = VisionResult.from_dict(data["vision"])
+        return cls(
+            file_id=data.get("file_id"),
+            vision=vision,
+            text_analysis=data.get("text_analysis"),
+            overall_risk_score=data.get("overall_risk_score"),
+            overall_severity=data.get("overall_severity"),
+            external_id=data.get("external_id"),
+            customer_id=data.get("customer_id"),
+            metadata=data.get("metadata"),
+        )
+
+
+# =============================================================================
+# Webhooks
+# =============================================================================
+
+
+@dataclass
+class Webhook:
+    """A webhook configuration."""
+
+    id: str
+    url: str
+    events: list[str]
+    active: bool
+    secret: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Webhook":
+        """Create from API response dictionary."""
+        return cls(
+            id=data["id"],
+            url=data["url"],
+            events=data["events"],
+            active=data["active"],
+            secret=data.get("secret"),
+            created_at=data.get("created_at"),
+            updated_at=data.get("updated_at"),
+        )
+
+
+@dataclass
+class WebhookListResult:
+    """Result from listing webhooks."""
+
+    webhooks: list[Webhook]
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "WebhookListResult":
+        """Create from API response dictionary."""
+        return cls(
+            webhooks=[Webhook.from_dict(w) for w in data["webhooks"]],
+        )
+
+
+@dataclass
+class CreateWebhookInput:
+    """Input for creating a webhook."""
+
+    url: str
+    events: list[str]
+    active: bool = True
+
+
+@dataclass
+class CreateWebhookResult:
+    """Result from creating a webhook."""
+
+    message: str
+    webhook: Webhook
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "CreateWebhookResult":
+        """Create from API response dictionary."""
+        return cls(
+            message=data["message"],
+            webhook=Webhook.from_dict(data["webhook"]),
+        )
+
+
+@dataclass
+class UpdateWebhookInput:
+    """Input for updating a webhook."""
+
+    url: Optional[str] = None
+    events: Optional[list[str]] = None
+    active: Optional[bool] = None
+
+
+@dataclass
+class UpdateWebhookResult:
+    """Result from updating a webhook."""
+
+    message: str
+    webhook: Webhook
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "UpdateWebhookResult":
+        """Create from API response dictionary."""
+        return cls(
+            message=data["message"],
+            webhook=Webhook.from_dict(data["webhook"]),
+        )
+
+
+@dataclass
+class DeleteWebhookResult:
+    """Result from deleting a webhook."""
+
+    message: str
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "DeleteWebhookResult":
+        """Create from API response dictionary."""
+        return cls(message=data["message"])
+
+
+@dataclass
+class TestWebhookResult:
+    """Result from testing a webhook."""
+
+    message: str
+    status_code: Optional[int] = None
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "TestWebhookResult":
+        """Create from API response dictionary."""
+        return cls(
+            message=data["message"],
+            status_code=data.get("status_code"),
+        )
+
+
+@dataclass
+class RegenerateSecretResult:
+    """Result from regenerating a webhook secret."""
+
+    message: str
+    secret: str
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "RegenerateSecretResult":
+        """Create from API response dictionary."""
+        return cls(
+            message=data["message"],
+            secret=data["secret"],
+        )
+
+
+# =============================================================================
+# Pricing
+# =============================================================================
+
+
+@dataclass
+class PricingPlan:
+    """A pricing plan summary."""
+
+    name: str
+    price: str
+    messages: str
+    features: list[str]
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "PricingPlan":
+        """Create from API response dictionary."""
+        return cls(
+            name=data["name"],
+            price=data["price"],
+            messages=data["messages"],
+            features=data["features"],
+        )
+
+
+@dataclass
+class PricingResult:
+    """Result from pricing overview."""
+
+    plans: list[PricingPlan]
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "PricingResult":
+        """Create from API response dictionary."""
+        return cls(
+            plans=[PricingPlan.from_dict(p) for p in data["plans"]],
+        )
+
+
+@dataclass
+class PricingDetailPlan:
+    """A detailed pricing plan."""
+
+    name: str
+    tier: str
+    price: dict[str, Any]
+    limits: dict[str, Any]
+    features: dict[str, Any]
+    endpoints: list[str]
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "PricingDetailPlan":
+        """Create from API response dictionary."""
+        return cls(
+            name=data["name"],
+            tier=data["tier"],
+            price=data["price"],
+            limits=data["limits"],
+            features=data["features"],
+            endpoints=data["endpoints"],
+        )
+
+
+@dataclass
+class PricingDetailsResult:
+    """Result from detailed pricing query."""
+
+    plans: list[PricingDetailPlan]
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "PricingDetailsResult":
+        """Create from API response dictionary."""
+        return cls(
+            plans=[PricingDetailPlan.from_dict(p) for p in data["plans"]],
+        )
+
+
+# =============================================================================
+# Usage
+# =============================================================================
+
+
+@dataclass
+class UsageDay:
+    """Usage data for a single day."""
+
+    date: str
+    total_requests: int
+    success_requests: int
+    error_requests: int
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "UsageDay":
+        """Create from API response dictionary."""
+        return cls(
+            date=data["date"],
+            total_requests=data["total_requests"],
+            success_requests=data["success_requests"],
+            error_requests=data["error_requests"],
+        )
+
+
+@dataclass
+class UsageHistoryResult:
+    """Result from usage history query."""
+
+    api_key_id: str
+    days: list[UsageDay]
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "UsageHistoryResult":
+        """Create from API response dictionary."""
+        return cls(
+            api_key_id=data["api_key_id"],
+            days=[UsageDay.from_dict(d) for d in data["days"]],
+        )
+
+
+@dataclass
+class UsageByToolResult:
+    """Result from usage-by-tool query."""
+
+    date: str
+    tools: dict[str, int]
+    endpoints: dict[str, int]
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "UsageByToolResult":
+        """Create from API response dictionary."""
+        return cls(
+            date=data["date"],
+            tools=data["tools"],
+            endpoints=data["endpoints"],
+        )
+
+
+@dataclass
+class UsageMonthlyResult:
+    """Result from monthly usage summary."""
+
+    tier: str
+    tier_display_name: str
+    billing: dict[str, Any]
+    usage: dict[str, Any]
+    rate_limit: dict[str, Any]
+    recommendations: Optional[dict[str, Any]]
+    links: dict[str, Any]
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "UsageMonthlyResult":
+        """Create from API response dictionary."""
+        return cls(
+            tier=data["tier"],
+            tier_display_name=data["tier_display_name"],
+            billing=data["billing"],
+            usage=data["usage"],
+            rate_limit=data["rate_limit"],
+            recommendations=data.get("recommendations"),
+            links=data["links"],
+        )
