@@ -123,6 +123,7 @@ class BullyingResult:
     rationale: str
     recommended_action: str
     risk_score: float
+    credits_used: Optional[int] = None
     external_id: Optional[str] = None
     metadata: Optional[dict[str, Any]] = None
 
@@ -137,6 +138,7 @@ class BullyingResult:
             rationale=data["rationale"],
             recommended_action=data["recommended_action"],
             risk_score=data["risk_score"],
+            credits_used=data.get("credits_used"),
             external_id=data.get("external_id"),
             metadata=data.get("metadata"),
         )
@@ -177,6 +179,7 @@ class GroomingResult:
     rationale: str
     risk_score: float
     recommended_action: str
+    credits_used: Optional[int] = None
     external_id: Optional[str] = None
     metadata: Optional[dict[str, Any]] = None
 
@@ -190,6 +193,7 @@ class GroomingResult:
             rationale=data["rationale"],
             risk_score=data["risk_score"],
             recommended_action=data["recommended_action"],
+            credits_used=data.get("credits_used"),
             external_id=data.get("external_id"),
             metadata=data.get("metadata"),
         )
@@ -221,6 +225,7 @@ class UnsafeResult:
     risk_score: float
     rationale: str
     recommended_action: str
+    credits_used: Optional[int] = None
     external_id: Optional[str] = None
     metadata: Optional[dict[str, Any]] = None
 
@@ -235,6 +240,7 @@ class UnsafeResult:
             risk_score=data["risk_score"],
             rationale=data["rationale"],
             recommended_action=data["recommended_action"],
+            credits_used=data.get("credits_used"),
             external_id=data.get("external_id"),
             metadata=data.get("metadata"),
         )
@@ -266,6 +272,7 @@ class AnalyzeResult:
     bullying: Optional[BullyingResult] = None
     unsafe: Optional[UnsafeResult] = None
     recommended_action: str = "none"
+    credits_used: Optional[int] = None
     external_id: Optional[str] = None
     metadata: Optional[dict[str, Any]] = None
 
@@ -304,6 +311,7 @@ class EmotionsResult:
     trend: EmotionTrend
     summary: str
     recommended_followup: str
+    credits_used: Optional[int] = None
     external_id: Optional[str] = None
     metadata: Optional[dict[str, Any]] = None
 
@@ -316,6 +324,7 @@ class EmotionsResult:
             trend=EmotionTrend(data["trend"]),
             summary=data["summary"],
             recommended_followup=data["recommended_followup"],
+            credits_used=data.get("credits_used"),
             external_id=data.get("external_id"),
             metadata=data.get("metadata"),
         )
@@ -346,6 +355,7 @@ class ActionPlanResult:
     steps: list[str]
     tone: str
     reading_level: Optional[str] = None
+    credits_used: Optional[int] = None
     external_id: Optional[str] = None
     metadata: Optional[dict[str, Any]] = None
 
@@ -357,6 +367,7 @@ class ActionPlanResult:
             steps=data["steps"],
             tone=data["tone"],
             reading_level=data.get("approx_reading_level"),
+            credits_used=data.get("credits_used"),
             external_id=data.get("external_id"),
             metadata=data.get("metadata"),
         )
@@ -397,6 +408,7 @@ class ReportResult:
     risk_level: RiskLevel
     categories: list[str]
     recommended_next_steps: list[str]
+    credits_used: Optional[int] = None
     external_id: Optional[str] = None
     metadata: Optional[dict[str, Any]] = None
 
@@ -408,6 +420,7 @@ class ReportResult:
             risk_level=RiskLevel(data["risk_level"]),
             categories=data["categories"],
             recommended_next_steps=data["recommended_next_steps"],
+            credits_used=data.get("credits_used"),
             external_id=data.get("external_id"),
             metadata=data.get("metadata"),
         )
@@ -802,6 +815,7 @@ class VoiceAnalysisResult:
     analysis: Optional[dict[str, Any]] = None
     overall_risk_score: Optional[float] = None
     overall_severity: Optional[str] = None
+    credits_used: Optional[int] = None
     external_id: Optional[str] = None
     customer_id: Optional[str] = None
     metadata: Optional[dict[str, Any]] = None
@@ -818,6 +832,7 @@ class VoiceAnalysisResult:
             analysis=data.get("analysis"),
             overall_risk_score=data.get("overall_risk_score"),
             overall_severity=data.get("overall_severity"),
+            credits_used=data.get("credits_used"),
             external_id=data.get("external_id"),
             customer_id=data.get("customer_id"),
             metadata=data.get("metadata"),
@@ -864,6 +879,7 @@ class ImageAnalysisResult:
     text_analysis: Optional[dict[str, Any]] = None
     overall_risk_score: Optional[float] = None
     overall_severity: Optional[str] = None
+    credits_used: Optional[int] = None
     external_id: Optional[str] = None
     customer_id: Optional[str] = None
     metadata: Optional[dict[str, Any]] = None
@@ -880,6 +896,7 @@ class ImageAnalysisResult:
             text_analysis=data.get("text_analysis"),
             overall_risk_score=data.get("overall_risk_score"),
             overall_severity=data.get("overall_severity"),
+            credits_used=data.get("credits_used"),
             external_id=data.get("external_id"),
             customer_id=data.get("customer_id"),
             metadata=data.get("metadata"),

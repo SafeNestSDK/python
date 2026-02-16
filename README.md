@@ -187,6 +187,62 @@ print(f"Risk: {report.risk_level}")
 print(f"Next Steps: {report.recommended_next_steps}")
 ```
 
+### Voice Streaming
+
+Real-time voice streaming with live safety analysis over WebSocket. Requires `websockets`:
+
+```bash
+pip install tuteliq[voice]
+```
+
+```python
+from tuteliq import VoiceStreamConfig, VoiceStreamHandlers
+
+session = client.voice_stream(
+    config=VoiceStreamConfig(
+        interval_seconds=10,
+        analysis_types=["bullying", "unsafe"],
+    ),
+    handlers=VoiceStreamHandlers(
+        on_transcription=lambda e: print(f"Transcript: {e.text}"),
+        on_alert=lambda e: print(f"Alert: {e.category} ({e.severity})"),
+    ),
+)
+
+await session.connect()
+
+# Send audio chunks as they arrive
+await session.send_audio(audio_bytes)
+
+# End session and get summary
+summary = await session.end()
+print(f"Risk: {summary.overall_risk}")
+print(f"Score: {summary.overall_risk_score}")
+print(f"Full transcript: {summary.transcript}")
+```
+
+---
+
+## Credits Tracking
+
+Each response includes the number of credits consumed:
+
+```python
+result = await client.detect_bullying("Test message")
+print(f"Credits used: {result.credits_used}")  # 1
+```
+
+| Method | Credits | Notes |
+|--------|---------|-------|
+| `detect_bullying()` | 1 | Single text analysis |
+| `detect_unsafe()` | 1 | Single text analysis |
+| `detect_grooming()` | 1 per 10 msgs | `ceil(messages / 10)`, min 1 |
+| `analyze_emotions()` | 1 per 10 msgs | `ceil(messages / 10)`, min 1 |
+| `get_action_plan()` | 2 | Longer generation |
+| `generate_report()` | 3 | Structured output |
+| `analyze_voice()` | 5 | Transcription + analysis |
+| `analyze_image()` | 3 | Vision + OCR + analysis |
+
 ---
 
 ## Tracking Fields

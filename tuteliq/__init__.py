@@ -81,6 +81,18 @@ from tuteliq.models import (
     AuditLogEntry,
     AuditLogsResult,
 )
+from tuteliq.voice_stream import (
+    VoiceStreamConfig,
+    VoiceStreamHandlers,
+    VoiceStreamSession,
+    VoiceReadyEvent,
+    VoiceTranscriptionEvent,
+    VoiceTranscriptionSegment,
+    VoiceAlertEvent,
+    VoiceSessionSummaryEvent,
+    VoiceConfigUpdatedEvent,
+    VoiceErrorEvent,
+)
 from tuteliq.errors import (
     TuteliqError,
     AuthenticationError,
@@ -94,7 +106,7 @@ from tuteliq.errors import (
     TierAccessError,
 )
 
-__version__ = "2.1.0"
+__version__ = "2.2.0"
 __all__ = [
     # Client
     "Tuteliq",
@@ -166,6 +178,17 @@ __all__ = [
     "RectifyDataResult",
     "AuditLogEntry",
     "AuditLogsResult",
+    # Voice streaming types
+    "VoiceStreamConfig",
+    "VoiceStreamHandlers",
+    "VoiceStreamSession",
+    "VoiceReadyEvent",
+    "VoiceTranscriptionEvent",
+    "VoiceTranscriptionSegment",
+    "VoiceAlertEvent",
+    "VoiceSessionSummaryEvent",
+    "VoiceConfigUpdatedEvent",
+    "VoiceErrorEvent",
     # Errors
     "TuteliqError",
     "AuthenticationError",

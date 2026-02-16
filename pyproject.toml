@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tuteliq"
-version = "1.2.0"
+version = "2.2.0"
 description = "Official Python SDK for Tuteliq - AI-powered child safety API"
 readme = "README.md"
 license = "MIT"
@@ -41,6 +41,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+voice = [
+    "websockets>=12.0",
+]
 dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",

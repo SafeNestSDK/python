@@ -825,6 +825,52 @@ class Tuteliq:
         return ImageAnalysisResult.from_dict(data)
 
     # =========================================================================
+    # Voice Streaming
+    # =========================================================================
+
+    def voice_stream(
+        self,
+        config: Optional["VoiceStreamConfig"] = None,
+        handlers: Optional["VoiceStreamHandlers"] = None,
+    ) -> "VoiceStreamSession":
+        """Create a voice streaming session over WebSocket.
+
+        Requires the ``websockets`` package::
+
+            pip install websockets
+
+        Args:
+            config: Optional session configuration (interval, analysis types).
+            handlers: Optional event handler callbacks.
+
+        Returns:
+            A VoiceStreamSession. Call ``await session.connect()`` to start.
+
+        Example::
+
+            session = client.voice_stream(
+                config=VoiceStreamConfig(
+                    interval_seconds=10,
+                    analysis_types=["bullying", "unsafe"],
+                ),
+                handlers=VoiceStreamHandlers(
+                    on_transcription=lambda e: print("Transcript:", e.text),
+                    on_alert=lambda e: print("Alert:", e.category, e.severity),
+                ),
+            )
+            await session.connect()
+            await session.send_audio(audio_bytes)
+            summary = await session.end()
+        """
+        from tuteliq.voice_stream import VoiceStreamSession
+
+        return VoiceStreamSession(
+            api_key=self._api_key,
+            config=config,
+            handlers=handlers,
+        )
+
+    # =========================================================================
     # Webhooks
     # =========================================================================
 
