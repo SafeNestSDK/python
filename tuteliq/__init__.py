@@ -22,6 +22,11 @@ from tuteliq.models import (
     ConsentType,
     ConsentStatus,
     AuditAction,
+    Detection,
+    Language,
+    LanguageStatus,
+    Tier,
+    SUPPORTED_LANGUAGES,
     # Input types
     AnalysisContext,
     DetectBullyingInput,
@@ -38,6 +43,8 @@ from tuteliq.models import (
     RectifyDataInput,
     CreateWebhookInput,
     UpdateWebhookInput,
+    DetectionInput,
+    AnalyseMultiInput,
     # Result types
     BullyingResult,
     GroomingResult,
@@ -53,6 +60,15 @@ from tuteliq.models import (
     VoiceAnalysisResult,
     VisionResult,
     ImageAnalysisResult,
+    # Detection result types (Fraud + Safety Extended)
+    DetectionCategory,
+    DetectionEvidence,
+    DetectionResult,
+    AgeCalibration,
+    AnalyseMultiResult,
+    AnalyseMultiSummary,
+    VideoAnalysisResult,
+    VideoSafetyFinding,
     # Webhook types
     Webhook,
     WebhookListResult,
@@ -106,7 +122,7 @@ from tuteliq.errors import (
     TierAccessError,
 )
 
-__version__ = "2.2.0"
+__version__ = "2.3.0"
 __all__ = [
     # Client
     "Tuteliq",
@@ -145,6 +161,22 @@ __all__ = [
     "ActionPlanResult",
     "ReportResult",
     "Usage",
+    # Detection types (Fraud + Safety Extended)
+    "Detection",
+    "DetectionCategory",
+    "DetectionEvidence",
+    "DetectionInput",
+    "DetectionResult",
+    "AgeCalibration",
+    "AnalyseMultiInput",
+    "AnalyseMultiResult",
+    "AnalyseMultiSummary",
+    "Language",
+    "LanguageStatus",
+    "SUPPORTED_LANGUAGES",
+    "Tier",
+    "VideoAnalysisResult",
+    "VideoSafetyFinding",
     # Voice/Image types
     "TranscriptionSegment",
     "TranscriptionResult",

@@ -71,6 +71,11 @@ from tuteliq.models import (
     WebhookListResult,
     ReportResult,
     Usage,
+    DetectionInput,
+    DetectionResult,
+    AnalyseMultiInput,
+    AnalyseMultiResult,
+    VideoAnalysisResult,
 )
 
 
@@ -105,6 +110,42 @@ class Tuteliq:
         if platform and len(platform) > 0:
             return f"{platform} - {Tuteliq._SDK_IDENTIFIER}"
         return Tuteliq._SDK_IDENTIFIER
+
+    @staticmethod
+    def _resolve_detection_input(
+        content_or_input: Union[str, DetectionInput],
+        context: Optional[AnalysisContext],
+        include_evidence: bool,
+        external_id: Optional[str],
+        customer_id: Optional[str],
+        metadata: Optional[dict[str, Any]],
+    ) -> DetectionInput:
+        """Resolve string or DetectionInput to DetectionInput."""
+        if isinstance(content_or_input, str):
+            return DetectionInput(
+                content=content_or_input,
+                context=context,
+                include_evidence=include_evidence,
+                external_id=external_id,
+                customer_id=customer_id,
+                metadata=metadata,
+            )
+        return content_or_input
+
+    def _build_detection_body(self, input_data: DetectionInput) -> dict[str, Any]:
+        """Build request body for unified detection endpoints."""
+        ctx = input_data.context.to_dict() if input_data.context else {}
+        ctx["platform"] = self._resolve_platform(ctx.get("platform"))
+        body: dict[str, Any] = {"text": input_data.content, "context": ctx}
+        if input_data.include_evidence:
+            body["include_evidence"] = True
+        if input_data.external_id:
+            body["external_id"] = input_data.external_id
+        if input_data.customer_id:
+            body["customer_id"] = input_data.customer_id
+        if input_data.metadata:
+            body["metadata"] = input_data.metadata
+        return body
 
     def __init__(
         self,
@@ -823,6 +864,233 @@ class Tuteliq:
         files = {"file": (filename, file, "application/octet-stream")}
         data = await self._multipart_request("/api/v1/safety/image", fields, files)
         return ImageAnalysisResult.from_dict(data)
+
+    # =========================================================================
+    # Fraud Detection
+    # =========================================================================
+
+    async def detect_social_engineering(
+        self,
+        content_or_input: Union[str, DetectionInput],
+        *,
+        context: Optional[AnalysisContext] = None,
+        include_evidence: bool = False,
+        external_id: Optional[str] = None,
+        customer_id: Optional[str] = None,
+        metadata: Optional[dict[str, Any]] = None,
+    ) -> DetectionResult:
+        """Detect social engineering tactics."""
+        input_data = self._resolve_detection_input(
+            content_or_input, context, include_evidence, external_id, customer_id, metadata
+        )
+        data = await self._request("POST", "/api/v1/fraud/social-engineering", self._build_detection_body(input_data))
+        return DetectionResult.from_dict(data)
+
+    async def detect_app_fraud(
+        self,
+        content_or_input: Union[str, DetectionInput],
+        *,
+        context: Optional[AnalysisContext] = None,
+        include_evidence: bool = False,
+        external_id: Optional[str] = None,
+        customer_id: Optional[str] = None,
+        metadata: Optional[dict[str, Any]] = None,
+    ) -> DetectionResult:
+        """Detect app-based fraud patterns."""
+        input_data = self._resolve_detection_input(
+            content_or_input, context, include_evidence, external_id, customer_id, metadata
+        )
+        data = await self._request("POST", "/api/v1/fraud/app-fraud", self._build_detection_body(input_data))
+        return DetectionResult.from_dict(data)
+
+    async def detect_romance_scam(
+        self,
+        content_or_input: Union[str, DetectionInput],
+        *,
+        context: Optional[AnalysisContext] = None,
+        include_evidence: bool = False,
+        external_id: Optional[str] = None,
+        customer_id: Optional[str] = None,
+        metadata: Optional[dict[str, Any]] = None,
+    ) -> DetectionResult:
+        """Detect romance scam patterns."""
+        input_data = self._resolve_detection_input(
+            content_or_input, context, include_evidence, external_id, customer_id, metadata
+        )
+        data = await self._request("POST", "/api/v1/fraud/romance-scam", self._build_detection_body(input_data))
+        return DetectionResult.from_dict(data)
+
+    async def detect_mule_recruitment(
+        self,
+        content_or_input: Union[str, DetectionInput],
+        *,
+        context: Optional[AnalysisContext] = None,
+        include_evidence: bool = False,
+        external_id: Optional[str] = None,
+        customer_id: Optional[str] = None,
+        metadata: Optional[dict[str, Any]] = None,
+    ) -> DetectionResult:
+        """Detect money mule recruitment."""
+        input_data = self._resolve_detection_input(
+            content_or_input, context, include_evidence, external_id, customer_id, metadata
+        )
+        data = await self._request("POST", "/api/v1/fraud/mule-recruitment", self._build_detection_body(input_data))
+        return DetectionResult.from_dict(data)
+
+    # =========================================================================
+    # Safety Extended
+    # =========================================================================
+
+    async def detect_gambling_harm(
+        self,
+        content_or_input: Union[str, DetectionInput],
+        *,
+        context: Optional[AnalysisContext] = None,
+        include_evidence: bool = False,
+        external_id: Optional[str] = None,
+        customer_id: Optional[str] = None,
+        metadata: Optional[dict[str, Any]] = None,
+    ) -> DetectionResult:
+        """Detect gambling harm indicators."""
+        input_data = self._resolve_detection_input(
+            content_or_input, context, include_evidence, external_id, customer_id, metadata
+        )
+        data = await self._request("POST", "/api/v1/safety/gambling-harm", self._build_detection_body(input_data))
+        return DetectionResult.from_dict(data)
+
+    async def detect_coercive_control(
+        self,
+        content_or_input: Union[str, DetectionInput],
+        *,
+        context: Optional[AnalysisContext] = None,
+        include_evidence: bool = False,
+        external_id: Optional[str] = None,
+        customer_id: Optional[str] = None,
+        metadata: Optional[dict[str, Any]] = None,
+    ) -> DetectionResult:
+        """Detect coercive control patterns."""
+        input_data = self._resolve_detection_input(
+            content_or_input, context, include_evidence, external_id, customer_id, metadata
+        )
+        data = await self._request("POST", "/api/v1/safety/coercive-control", self._build_detection_body(input_data))
+        return DetectionResult.from_dict(data)
+
+    async def detect_vulnerability_exploitation(
+        self,
+        content_or_input: Union[str, DetectionInput],
+        *,
+        context: Optional[AnalysisContext] = None,
+        include_evidence: bool = False,
+        external_id: Optional[str] = None,
+        customer_id: Optional[str] = None,
+        metadata: Optional[dict[str, Any]] = None,
+    ) -> DetectionResult:
+        """Detect vulnerability exploitation with cross-endpoint modifier."""
+        input_data = self._resolve_detection_input(
+            content_or_input, context, include_evidence, external_id, customer_id, metadata
+        )
+        data = await self._request("POST", "/api/v1/safety/vulnerability-exploitation", self._build_detection_body(input_data))
+        return DetectionResult.from_dict(data)
+
+    async def detect_radicalisation(
+        self,
+        content_or_input: Union[str, DetectionInput],
+        *,
+        context: Optional[AnalysisContext] = None,
+        include_evidence: bool = False,
+        external_id: Optional[str] = None,
+        customer_id: Optional[str] = None,
+        metadata: Optional[dict[str, Any]] = None,
+    ) -> DetectionResult:
+        """Detect radicalisation indicators."""
+        input_data = self._resolve_detection_input(
+            content_or_input, context, include_evidence, external_id, customer_id, metadata
+        )
+        data = await self._request("POST", "/api/v1/safety/radicalisation", self._build_detection_body(input_data))
+        return DetectionResult.from_dict(data)
+
+    # =========================================================================
+    # Multi-Endpoint Analysis
+    # =========================================================================
+
+    async def analyse_multi(
+        self, input_data: AnalyseMultiInput
+    ) -> AnalyseMultiResult:
+        """Run multiple detection endpoints on a single piece of content.
+
+        Args:
+            input_data: AnalyseMultiInput with content and detections list.
+
+        Returns:
+            AnalyseMultiResult with per-endpoint results and summary.
+        """
+        ctx = input_data.context.to_dict() if input_data.context else {}
+        ctx["platform"] = self._resolve_platform(ctx.get("platform"))
+        body: dict[str, Any] = {
+            "text": input_data.content,
+            "endpoints": input_data.detections,
+            "context": ctx,
+        }
+        if input_data.include_evidence:
+            body["options"] = {"include_evidence": True}
+        if input_data.external_id:
+            body["external_id"] = input_data.external_id
+        if input_data.customer_id:
+            body["customer_id"] = input_data.customer_id
+        if input_data.metadata:
+            body["metadata"] = input_data.metadata
+
+        data = await self._request("POST", "/api/v1/analyse/multi", body)
+        return AnalyseMultiResult.from_dict(data)
+
+    # =========================================================================
+    # Video Analysis
+    # =========================================================================
+
+    async def analyze_video(
+        self,
+        file: bytes,
+        filename: str,
+        *,
+        file_id: Optional[str] = None,
+        external_id: Optional[str] = None,
+        customer_id: Optional[str] = None,
+        metadata: Optional[dict[str, Any]] = None,
+        age_group: Optional[str] = None,
+        platform: Optional[str] = None,
+    ) -> VideoAnalysisResult:
+        """Analyze video content for safety concerns.
+
+        Args:
+            file: Raw video file bytes.
+            filename: Original filename (e.g. "clip.mp4").
+            file_id: Optional file identifier.
+            external_id: Your identifier for correlation.
+            customer_id: Customer identifier.
+            metadata: Custom metadata.
+            age_group: Age group context.
+            platform: Platform identifier.
+
+        Returns:
+            VideoAnalysisResult with frame findings and overall risk.
+        """
+        fields: dict[str, Any] = {
+            "platform": self._resolve_platform(platform),
+        }
+        if file_id:
+            fields["file_id"] = file_id
+        if external_id:
+            fields["external_id"] = external_id
+        if customer_id:
+            fields["customer_id"] = customer_id
+        if metadata:
+            fields["metadata"] = json.dumps(metadata)
+        if age_group:
+            fields["age_group"] = age_group
+
+        files = {"file": (filename, file, "application/octet-stream")}
+        data = await self._multipart_request("/api/v1/safety/video", fields, files)
+        return VideoAnalysisResult.from_dict(data)
 
     # =========================================================================
     # Voice Streaming

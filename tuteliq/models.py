@@ -64,6 +64,57 @@ class MessageRole(str, Enum):
     UNKNOWN = "unknown"
 
 
+class Tier(str, Enum):
+    """Subscription tier levels."""
+
+    STARTER = "starter"
+    INDIE = "indie"
+    PRO = "pro"
+    BUSINESS = "business"
+    ENTERPRISE = "enterprise"
+
+
+class Language(str, Enum):
+    """Supported language codes for content analysis."""
+
+    EN = "en"
+    ES = "es"
+    PT = "pt"
+    UK = "uk"
+    SV = "sv"
+    NO = "no"
+    DA = "da"
+    FI = "fi"
+    DE = "de"
+    FR = "fr"
+
+
+class LanguageStatus(str, Enum):
+    """Language support maturity status."""
+
+    STABLE = "stable"
+    BETA = "beta"
+
+
+class Detection(str, Enum):
+    """Detection endpoint identifiers for multi-endpoint analysis."""
+
+    BULLYING = "bullying"
+    GROOMING = "grooming"
+    UNSAFE = "unsafe"
+    SOCIAL_ENGINEERING = "social-engineering"
+    APP_FRAUD = "app-fraud"
+    ROMANCE_SCAM = "romance-scam"
+    MULE_RECRUITMENT = "mule-recruitment"
+    GAMBLING_HARM = "gambling-harm"
+    COERCIVE_CONTROL = "coercive-control"
+    VULNERABILITY_EXPLOITATION = "vulnerability-exploitation"
+    RADICALISATION = "radicalisation"
+
+
+SUPPORTED_LANGUAGES = list(Language)
+
+
 # =============================================================================
 # Common Types
 # =============================================================================
@@ -123,6 +174,8 @@ class BullyingResult:
     rationale: str
     recommended_action: str
     risk_score: float
+    language: Optional[str] = None
+    language_status: Optional[str] = None
     credits_used: Optional[int] = None
     external_id: Optional[str] = None
     metadata: Optional[dict[str, Any]] = None
@@ -138,6 +191,8 @@ class BullyingResult:
             rationale=data["rationale"],
             recommended_action=data["recommended_action"],
             risk_score=data["risk_score"],
+            language=data.get("language"),
+            language_status=data.get("language_status"),
             credits_used=data.get("credits_used"),
             external_id=data.get("external_id"),
             metadata=data.get("metadata"),
@@ -179,6 +234,8 @@ class GroomingResult:
     rationale: str
     risk_score: float
     recommended_action: str
+    language: Optional[str] = None
+    language_status: Optional[str] = None
     credits_used: Optional[int] = None
     external_id: Optional[str] = None
     metadata: Optional[dict[str, Any]] = None
@@ -193,6 +250,8 @@ class GroomingResult:
             rationale=data["rationale"],
             risk_score=data["risk_score"],
             recommended_action=data["recommended_action"],
+            language=data.get("language"),
+            language_status=data.get("language_status"),
             credits_used=data.get("credits_used"),
             external_id=data.get("external_id"),
             metadata=data.get("metadata"),
@@ -225,6 +284,8 @@ class UnsafeResult:
     risk_score: float
     rationale: str
     recommended_action: str
+    language: Optional[str] = None
+    language_status: Optional[str] = None
     credits_used: Optional[int] = None
     external_id: Optional[str] = None
     metadata: Optional[dict[str, Any]] = None
@@ -240,6 +301,8 @@ class UnsafeResult:
             risk_score=data["risk_score"],
             rationale=data["rationale"],
             recommended_action=data["recommended_action"],
+            language=data.get("language"),
+            language_status=data.get("language_status"),
             credits_used=data.get("credits_used"),
             external_id=data.get("external_id"),
             metadata=data.get("metadata"),
@@ -1116,6 +1179,234 @@ class PricingDetailsResult:
         """Create from API response dictionary."""
         return cls(
             plans=[PricingDetailPlan.from_dict(p) for p in data["plans"]],
+        )
+
+
+# =============================================================================
+# Unified Detection (Fraud + Safety Extended)
+# =============================================================================
+
+
+@dataclass
+class DetectionInput:
+    """Input for fraud detection and safety-extended endpoints."""
+
+    content: str
+    context: Optional[AnalysisContext] = None
+    include_evidence: bool = False
+    external_id: Optional[str] = None
+    customer_id: Optional[str] = None
+    metadata: Optional[dict[str, Any]] = None
+
+
+@dataclass
+class DetectionCategory:
+    """A detected category with tag and confidence."""
+
+    tag: str
+    label: str
+    confidence: float
+
+
+@dataclass
+class DetectionEvidence:
+    """Evidence excerpt from the analyzed content."""
+
+    text: str
+    tactic: str
+    weight: float
+
+
+@dataclass
+class AgeCalibration:
+    """Age calibration details."""
+
+    applied: bool
+    age_group: Optional[str] = None
+    multiplier: Optional[float] = None
+
+
+@dataclass
+class DetectionResult:
+    """Unified result from fraud detection and safety-extended endpoints."""
+
+    endpoint: str
+    detected: bool
+    severity: float
+    confidence: float
+    risk_score: float
+    level: str
+    categories: list[DetectionCategory]
+    recommended_action: str
+    rationale: str
+    language: str
+    language_status: str
+    evidence: Optional[list[DetectionEvidence]] = None
+    age_calibration: Optional[AgeCalibration] = None
+    credits_used: Optional[int] = None
+    processing_time_ms: Optional[float] = None
+    external_id: Optional[str] = None
+    customer_id: Optional[str] = None
+    metadata: Optional[dict[str, Any]] = None
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "DetectionResult":
+        """Create from API response dictionary."""
+        categories = [
+            DetectionCategory(tag=c["tag"], label=c["label"], confidence=c["confidence"])
+            for c in data.get("categories", [])
+        ]
+        evidence = None
+        if "evidence" in data and data["evidence"]:
+            evidence = [
+                DetectionEvidence(text=e["text"], tactic=e["tactic"], weight=e["weight"])
+                for e in data["evidence"]
+            ]
+        age_cal = None
+        if "age_calibration" in data and data["age_calibration"]:
+            ac = data["age_calibration"]
+            age_cal = AgeCalibration(
+                applied=ac["applied"],
+                age_group=ac.get("age_group"),
+                multiplier=ac.get("multiplier"),
+            )
+        return cls(
+            endpoint=data["endpoint"],
+            detected=data["detected"],
+            severity=data["severity"],
+            confidence=data["confidence"],
+            risk_score=data["risk_score"],
+            level=data["level"],
+            categories=categories,
+            recommended_action=data["recommended_action"],
+            rationale=data["rationale"],
+            language=data["language"],
+            language_status=data["language_status"],
+            evidence=evidence,
+            age_calibration=age_cal,
+            credits_used=data.get("credits_used"),
+            processing_time_ms=data.get("processing_time_ms"),
+            external_id=data.get("external_id"),
+            customer_id=data.get("customer_id"),
+            metadata=data.get("metadata"),
+        )
+
+
+# =============================================================================
+# Multi-Endpoint Analysis
+# =============================================================================
+
+
+@dataclass
+class AnalyseMultiInput:
+    """Input for multi-endpoint analysis."""
+
+    content: str
+    detections: list[str]
+    context: Optional[AnalysisContext] = None
+    include_evidence: bool = False
+    external_id: Optional[str] = None
+    customer_id: Optional[str] = None
+    metadata: Optional[dict[str, Any]] = None
+
+
+@dataclass
+class AnalyseMultiSummary:
+    """Summary across all endpoints in multi-analysis."""
+
+    total_endpoints: int
+    detected_count: int
+    highest_risk: dict[str, Any]
+    overall_risk_level: str
+
+
+@dataclass
+class AnalyseMultiResult:
+    """Result from multi-endpoint analysis."""
+
+    results: list[DetectionResult]
+    summary: AnalyseMultiSummary
+    cross_endpoint_modifier: Optional[float] = None
+    credits_used: Optional[int] = None
+    external_id: Optional[str] = None
+    customer_id: Optional[str] = None
+    metadata: Optional[dict[str, Any]] = None
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "AnalyseMultiResult":
+        """Create from API response dictionary."""
+        results = [DetectionResult.from_dict(r) for r in data.get("results", [])]
+        s = data["summary"]
+        summary = AnalyseMultiSummary(
+            total_endpoints=s["total_endpoints"],
+            detected_count=s["detected_count"],
+            highest_risk=s["highest_risk"],
+            overall_risk_level=s["overall_risk_level"],
+        )
+        return cls(
+            results=results,
+            summary=summary,
+            cross_endpoint_modifier=data.get("cross_endpoint_modifier"),
+            credits_used=data.get("credits_used"),
+            external_id=data.get("external_id"),
+            customer_id=data.get("customer_id"),
+            metadata=data.get("metadata"),
+        )
+
+
+# =============================================================================
+# Video Analysis
+# =============================================================================
+
+
+@dataclass
+class VideoSafetyFinding:
+    """A safety finding from a video frame."""
+
+    frame_index: int
+    timestamp: float
+    description: str
+    categories: list[str]
+    severity: float
+
+
+@dataclass
+class VideoAnalysisResult:
+    """Result from video analysis."""
+
+    frames_analyzed: int
+    safety_findings: list[VideoSafetyFinding]
+    overall_risk_score: float
+    overall_severity: str
+    file_id: Optional[str] = None
+    credits_used: Optional[int] = None
+    external_id: Optional[str] = None
+    customer_id: Optional[str] = None
+    metadata: Optional[dict[str, Any]] = None
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "VideoAnalysisResult":
+        """Create from API response dictionary."""
+        findings = [
+            VideoSafetyFinding(
+                frame_index=f["frame_index"],
+                timestamp=f["timestamp"],
+                description=f["description"],
+                categories=f["categories"],
+                severity=f["severity"],
+            )
+            for f in data.get("safety_findings", [])
+        ]
+        return cls(
+            frames_analyzed=data["frames_analyzed"],
+            safety_findings=findings,
+            overall_risk_score=data["overall_risk_score"],
+            overall_severity=data["overall_severity"],
+            file_id=data.get("file_id"),
+            credits_used=data.get("credits_used"),
+            external_id=data.get("external_id"),
+            customer_id=data.get("customer_id"),
+            metadata=data.get("metadata"),
         )
 
 
