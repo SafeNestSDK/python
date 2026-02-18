@@ -54,7 +54,7 @@ dev = [
 
 [project.urls]
 Homepage = "https://tuteliq.ai"
-Documentation = "https://api.tuteliq.ai/docs"
+Documentation = "https://docs.tuteliq.ai"
 Repository = "https://github.com/Tuteliq/python"
 Issues = "https://github.com/Tuteliq/python/issues"
 
