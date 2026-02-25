@@ -115,6 +115,11 @@ result = await client.detect_grooming(
 
 if result.grooming_risk == GroomingRisk.HIGH:
     print(f"Flags: {result.flags}")  # ["secrecy", "isolation"]
+
+# Per-message breakdown (optional, returned on conversation-aware endpoints)
+if result.message_analysis:
+    for m in result.message_analysis:
+        print(f"Message {m.message_index}: risk={m.risk_score}, flags={m.flags}, summary={m.summary}")
 ```
 
 ### Unsafe Content Detection
