@@ -1672,29 +1672,21 @@ class VerificationSessionResult:
 
     session_id: str
     status: VerificationSessionStatus
-    mode: VerificationMode
-    created_at: str
-    expires_at: str
-    age_result: Optional[AgeVerificationResult] = None
-    identity_result: Optional[IdentityVerificationResult] = None
+    result: Optional[dict[str, Any]] = None
+    mode: Optional[str] = None
+    created_at: Optional[str] = None
+    expires_at: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "VerificationSessionResult":
         """Create from API response dictionary."""
-        age_result = None
-        if data.get("age_result"):
-            age_result = AgeVerificationResult.from_dict(data["age_result"])
-        identity_result = None
-        if data.get("identity_result"):
-            identity_result = IdentityVerificationResult.from_dict(data["identity_result"])
         return cls(
             session_id=data["session_id"],
             status=VerificationSessionStatus(data["status"]),
-            mode=VerificationMode(data["mode"]),
-            created_at=data["created_at"],
-            expires_at=data["expires_at"],
-            age_result=age_result,
-            identity_result=identity_result,
+            result=data.get("result"),
+            mode=data.get("mode"),
+            created_at=data.get("created_at"),
+            expires_at=data.get("expires_at"),
         )
 
 

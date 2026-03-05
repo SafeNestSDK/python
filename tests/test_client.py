@@ -274,25 +274,18 @@ class TestVerificationModels:
         data = {
             "session_id": "sess_abc",
             "status": "completed",
-            "mode": "age",
-            "created_at": "2025-01-01T00:00:00Z",
-            "expires_at": "2025-01-01T01:00:00Z",
-            "age_result": {
-                "verification_id": "vrf_123",
+            "result": {
                 "status": "verified",
+                "age": 25,
                 "is_minor": False,
-                "face_match": None,
-                "liveness": {"valid": True},
-                "failure_reasons": [],
-                "credits_used": 10,
             },
         }
         result = VerificationSessionResult.from_dict(data)
         assert result.session_id == "sess_abc"
         assert result.status == VerificationSessionStatus.COMPLETED
-        assert result.mode == VerificationMode.AGE
-        assert result.age_result is not None
-        assert result.age_result.status == VerificationStatus.VERIFIED
+        assert result.result is not None
+        assert result.result["status"] == "verified"
+        assert result.result["is_minor"] is False
 
     def test_verification_retrieve_result_from_dict(self) -> None:
         """Test VerificationRetrieveResult.from_dict."""
