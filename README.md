@@ -193,6 +193,41 @@ print(f"Risk: {report.risk_level}")
 print(f"Next Steps: {report.recommended_next_steps}")
 ```
 
+### Age Verification (Beta)
+
+> **Pro tier ($99/mo)+ required** · 5 credits per request · `POST /v1/verification/age`
+
+```python
+result = await client.verify_age(
+    document=open("id-front.jpg", "rb"),
+    selfie=open("selfie.jpg", "rb"),
+    method="combined",  # "document" | "biometric" | "combined"
+)
+
+print(result.verified)        # True
+print(result.estimated_age)   # 15
+print(result.age_range)       # "13-15"
+print(result.is_minor)        # True
+print(result.confidence)      # 0.97
+```
+
+### Identity Verification (Beta)
+
+> **Business tier ($349/mo)+ required** · 10 credits per request · `POST /v1/verification/identity`
+
+```python
+result = await client.verify_identity(
+    document=open("id-front.jpg", "rb"),
+    selfie=open("selfie.jpg", "rb"),
+)
+
+print(result.verified)                # True
+print(result.match_score)             # 0.98
+print(result.liveness_passed)         # True
+print(result.document_authenticated)  # True
+print(result.is_minor)               # False
+```
+
 ### Voice Streaming
 
 Real-time voice streaming with live safety analysis over WebSocket. Requires `websockets`:
@@ -248,6 +283,8 @@ print(f"Credits used: {result.credits_used}")  # 1
 | `generate_report()` | 3 | Structured output |
 | `analyze_voice()` | 5 | Transcription + analysis |
 | `analyze_image()` | 3 | Vision + OCR + analysis |
+| `verify_age()` | 5 | Age verification (Beta, Pro+) |
+| `verify_identity()` | 10 | Identity verification (Beta, Business+) |
 
 ---
 
