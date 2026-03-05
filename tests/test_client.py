@@ -13,6 +13,19 @@ from tuteliq import (
     DetectBullyingInput,
     DetectGroomingInput,
     GroomingMessage,
+    VerificationMode,
+    DocumentType,
+    VerificationStatus,
+    VerificationSessionStatus,
+    CreateVerificationSessionInput,
+    VerificationSession,
+    VerificationSessionResult,
+    FaceMatchResult,
+    LivenessResult,
+    AgeVerificationResult,
+    IdentityVerificationResult,
+    VerificationRetrieveResult,
+    IdentityRetrieveResult,
 )
 
 
@@ -139,3 +152,176 @@ class TestModels:
         )
         assert len(input_data.messages) == 2
         assert input_data.child_age == 12
+
+
+class TestVerificationEnums:
+    """Tests for verification enum values."""
+
+    def test_verification_mode_values(self) -> None:
+        """Test VerificationMode enum values."""
+        assert VerificationMode.AGE.value == "age"
+        assert VerificationMode.IDENTITY.value == "identity"
+
+    def test_document_type_values(self) -> None:
+        """Test DocumentType enum values."""
+        assert DocumentType.PASSPORT.value == "passport"
+        assert DocumentType.ID_CARD.value == "id_card"
+        assert DocumentType.DRIVERS_LICENSE.value == "drivers_license"
+
+    def test_verification_status_values(self) -> None:
+        """Test VerificationStatus enum values."""
+        assert VerificationStatus.VERIFIED.value == "verified"
+        assert VerificationStatus.FAILED.value == "failed"
+        assert VerificationStatus.NEEDS_REVIEW.value == "needs_review"
+
+    def test_verification_session_status_values(self) -> None:
+        """Test VerificationSessionStatus enum values."""
+        assert VerificationSessionStatus.PENDING.value == "pending"
+        assert VerificationSessionStatus.IN_PROGRESS.value == "in_progress"
+        assert VerificationSessionStatus.COMPLETED.value == "completed"
+        assert VerificationSessionStatus.FAILED.value == "failed"
+        assert VerificationSessionStatus.EXPIRED.value == "expired"
+        assert VerificationSessionStatus.CANCELLED.value == "cancelled"
+
+
+class TestVerificationModels:
+    """Tests for verification data models."""
+
+    def test_create_verification_session_input(self) -> None:
+        """Test CreateVerificationSessionInput creation."""
+        input_data = CreateVerificationSessionInput(
+            mode=VerificationMode.AGE,
+            document_type=DocumentType.PASSPORT,
+            external_id="ext_123",
+        )
+        assert input_data.mode == VerificationMode.AGE
+        assert input_data.document_type == DocumentType.PASSPORT
+        assert input_data.external_id == "ext_123"
+
+    def test_verification_session_from_dict(self) -> None:
+        """Test VerificationSession.from_dict maps mobile_url to url."""
+        data = {
+            "session_id": "sess_abc",
+            "mobile_url": "https://verify.tuteliq.ai/age/?session=abc&token=xyz",
+            "expires_at": "2025-12-31T23:59:59Z",
+            "mode": "age",
+        }
+        session = VerificationSession.from_dict(data)
+        assert session.session_id == "sess_abc"
+        assert session.url == "https://verify.tuteliq.ai/age/?session=abc&token=xyz"
+        assert session.mode == VerificationMode.AGE
+
+    def test_face_match_result_from_dict(self) -> None:
+        """Test FaceMatchResult.from_dict."""
+        data = {"matched": True, "distance": 0.3, "confidence": 0.95}
+        result = FaceMatchResult.from_dict(data)
+        assert result.matched is True
+        assert result.distance == 0.3
+        assert result.confidence == 0.95
+
+    def test_liveness_result_from_dict(self) -> None:
+        """Test LivenessResult.from_dict."""
+        data = {"valid": True}
+        result = LivenessResult.from_dict(data)
+        assert result.valid is True
+        assert result.reason is None
+
+    def test_age_verification_result_from_dict(self) -> None:
+        """Test AgeVerificationResult.from_dict."""
+        data = {
+            "verification_id": "vrf_123",
+            "status": "verified",
+            "age_bracket": "18-25",
+            "is_minor": False,
+            "face_match": {"matched": True, "distance": 0.2, "confidence": 0.98},
+            "liveness": {"valid": True},
+            "failure_reasons": [],
+            "credits_used": 10,
+        }
+        result = AgeVerificationResult.from_dict(data)
+        assert result.verification_id == "vrf_123"
+        assert result.status == VerificationStatus.VERIFIED
+        assert result.age_bracket == "18-25"
+        assert result.is_minor is False
+        assert result.face_match is not None
+        assert result.face_match.matched is True
+        assert result.liveness.valid is True
+        assert result.credits_used == 10
+
+    def test_identity_verification_result_from_dict(self) -> None:
+        """Test IdentityVerificationResult.from_dict."""
+        data = {
+            "verification_id": "vrf_456",
+            "status": "verified",
+            "full_name": "John Doe",
+            "date_of_birth": "1990-01-15",
+            "document_type": "passport",
+            "country_code": "GB",
+            "face_match": {"matched": True, "distance": 0.15, "confidence": 0.99},
+            "liveness": {"valid": True},
+            "failure_reasons": [],
+            "credits_used": 15,
+        }
+        result = IdentityVerificationResult.from_dict(data)
+        assert result.verification_id == "vrf_456"
+        assert result.status == VerificationStatus.VERIFIED
+        assert result.full_name == "John Doe"
+        assert result.country_code == "GB"
+        assert result.credits_used == 15
+
+    def test_verification_session_result_from_dict(self) -> None:
+        """Test VerificationSessionResult.from_dict."""
+        data = {
+            "session_id": "sess_abc",
+            "status": "completed",
+            "result": {
+                "status": "verified",
+                "age": 25,
+                "is_minor": False,
+            },
+        }
+        result = VerificationSessionResult.from_dict(data)
+        assert result.session_id == "sess_abc"
+        assert result.status == VerificationSessionStatus.COMPLETED
+        assert result.result is not None
+        assert result.result["status"] == "verified"
+        assert result.result["is_minor"] is False
+
+    def test_verification_retrieve_result_from_dict(self) -> None:
+        """Test VerificationRetrieveResult.from_dict."""
+        data = {
+            "verification_id": "vrf_789",
+            "status": "verified",
+            "age": 25,
+            "is_minor": False,
+            "face_matched": True,
+            "face_confidence": 0.97,
+            "liveness_valid": True,
+            "failure_reasons": [],
+            "created_at": "2025-01-01T00:00:00Z",
+        }
+        result = VerificationRetrieveResult.from_dict(data)
+        assert result.verification_id == "vrf_789"
+        assert result.status == VerificationStatus.VERIFIED
+        assert result.age == 25
+        assert result.is_minor is False
+
+    def test_identity_retrieve_result_from_dict(self) -> None:
+        """Test IdentityRetrieveResult.from_dict."""
+        data = {
+            "verification_id": "vrf_101",
+            "status": "verified",
+            "full_name": "Jane Doe",
+            "date_of_birth": "1985-06-20",
+            "document_type": "id_card",
+            "country_code": "SE",
+            "face_matched": True,
+            "face_confidence": 0.96,
+            "liveness_valid": True,
+            "failure_reasons": [],
+            "created_at": "2025-01-01T00:00:00Z",
+        }
+        result = IdentityRetrieveResult.from_dict(data)
+        assert result.verification_id == "vrf_101"
+        assert result.full_name == "Jane Doe"
+        assert result.country_code == "SE"

@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+from enum import Enum
 from typing import Any, Optional, Union
 
 import httpx
@@ -38,6 +39,7 @@ from tuteliq.models import (
     ConsentActionResult,
     ConsentStatusResult,
     ConsentType,
+    CreateVerificationSessionInput,
     CreateWebhookInput,
     CreateWebhookResult,
     DeleteWebhookResult,
@@ -49,6 +51,7 @@ from tuteliq.models import (
     GenerateReportInput,
     GetActionPlanInput,
     GroomingResult,
+    IdentityRetrieveResult,
     ImageAnalysisResult,
     LogBreachInput,
     LogBreachResult,
@@ -67,6 +70,10 @@ from tuteliq.models import (
     UsageByToolResult,
     UsageHistoryResult,
     UsageMonthlyResult,
+    VerificationMode,
+    VerificationRetrieveResult,
+    VerificationSession,
+    VerificationSessionResult,
     VoiceAnalysisResult,
     WebhookListResult,
     ReportResult,
@@ -1091,6 +1098,88 @@ class Tuteliq:
         files = {"file": (filename, file, "application/octet-stream")}
         data = await self._multipart_request("/api/v1/safety/video", fields, files)
         return VideoAnalysisResult.from_dict(data)
+
+    # =========================================================================
+    # Verification
+    # =========================================================================
+
+    async def create_verification_session(
+        self,
+        input_data: CreateVerificationSessionInput,
+    ) -> VerificationSession:
+        """Create a verification session and get a URL for the user to complete verification.
+
+        Args:
+            input_data: CreateVerificationSessionInput with mode and optional fields.
+
+        Returns:
+            VerificationSession with session_id, url, expires_at, and mode.
+        """
+        if not input_data.mode or input_data.mode not in (VerificationMode.AGE, VerificationMode.IDENTITY):
+            raise ValueError('Verification mode must be "age" or "identity"')
+
+        body: dict[str, Any] = {"mode": input_data.mode.value}
+        if input_data.document_type:
+            body["document_type"] = input_data.document_type.value if isinstance(input_data.document_type, Enum) else input_data.document_type
+        if input_data.redirect_url:
+            body["redirect_url"] = input_data.redirect_url
+        if input_data.external_id:
+            body["external_id"] = input_data.external_id
+        if input_data.customer_id:
+            body["customer_id"] = input_data.customer_id
+        if input_data.metadata:
+            body["metadata"] = input_data.metadata
+
+        data = await self._request("POST", "/api/v1/verify/session", body)
+        return VerificationSession.from_dict(data)
+
+    async def get_verification_session(self, session_id: str) -> VerificationSessionResult:
+        """Poll a verification session for its current status and result.
+
+        Args:
+            session_id: The session ID returned from create_verification_session.
+
+        Returns:
+            VerificationSessionResult with status and optional results.
+        """
+        data = await self._request("GET", f"/api/v1/verify/session/{session_id}")
+        return VerificationSessionResult.from_dict(data)
+
+    async def cancel_verification_session(self, session_id: str) -> dict[str, Any]:
+        """Cancel an active verification session.
+
+        Args:
+            session_id: The session ID to cancel.
+
+        Returns:
+            Dictionary with cancellation confirmation.
+        """
+        data = await self._request("DELETE", f"/api/v1/verify/session/{session_id}")
+        return data
+
+    async def get_age_verification(self, verification_id: str) -> VerificationRetrieveResult:
+        """Retrieve a past age verification result by ID.
+
+        Args:
+            verification_id: The verification ID.
+
+        Returns:
+            VerificationRetrieveResult with verification details.
+        """
+        data = await self._request("GET", f"/api/v1/verify/age/{verification_id}")
+        return VerificationRetrieveResult.from_dict(data)
+
+    async def get_identity_verification(self, verification_id: str) -> IdentityRetrieveResult:
+        """Retrieve a past identity verification result by ID.
+
+        Args:
+            verification_id: The verification ID.
+
+        Returns:
+            IdentityRetrieveResult with verification details.
+        """
+        data = await self._request("GET", f"/api/v1/verify/identity/{verification_id}")
+        return IdentityRetrieveResult.from_dict(data)
 
     # =========================================================================
     # Voice Streaming
