@@ -24,6 +24,8 @@ result = await client.detect_unsafe(text="content to check", age_group="13-15")
 - All 20+ Tuteliq API endpoints
 - 16+ detection categories (KOSA compliant)
 - Age group calibration (under-10, 10-12, 13-15, 14-17)
+- Age verification (Beta) — POST /v1/verification/age (Pro tier+, 5 credits)
+- Identity verification (Beta) — POST /v1/verification/identity (Business tier+, 10 credits)
 - Automatic retries and error handling
 - Python 3.9+
 
