@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+title: Tuteliq Python SDK
+message: "If you use this software, please cite it using this metadata."
+type: software
+authors:
+  - name: Tuteliq
+    website: https://tuteliq.ai
+repository-code: https://github.com/Tuteliq/python
+url: https://tuteliq.ai
+abstract: >-
+  Official Python SDK for Tuteliq — AI-powered child safety API for detecting bullying, grooming, and unsafe content
+keywords:
+  - child safety
+  - Python
+  - content moderation
+  - KOSA
+  - SDK
+  - PyPI
+  - online safety
+  - grooming detection
+  - async
+  - age verification
+  - identity verification
+license: MIT

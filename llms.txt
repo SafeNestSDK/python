@@ -1,0 +1,36 @@
+# Tuteliq Python SDK
+
+> Official Python SDK for Tuteliq — AI-powered child safety API for detecting bullying, grooming, and unsafe content.
+
+## What is this?
+A Python library for the Tuteliq child safety API. Detect bullying, grooming, self-harm, substance promotion, sexual exploitation, and other harmful content in text, conversations, audio, images, and video. Supports both synchronous and async clients.
+
+## Install
+pip install tuteliq
+
+## Quick Start
+import os
+from tuteliq import Tuteliq
+client = Tuteliq(api_key=os.environ["TUTELIQ_API_KEY"])
+result = client.detect_unsafe(text="content to check", age_group="13-15")
+
+## Async
+from tuteliq import AsyncTuteliq
+client = AsyncTuteliq(api_key=os.environ["TUTELIQ_API_KEY"])
+result = await client.detect_unsafe(text="content to check", age_group="13-15")
+
+## Key Features
+- Sync and async clients
+- All 20+ Tuteliq API endpoints
+- 16+ detection categories (KOSA compliant)
+- Age group calibration (under-10, 10-12, 13-15, 14-17)
+- Age verification (Beta) — POST /v1/verification/age (Pro tier+, 5 credits)
+- Identity verification (Beta) — POST /v1/verification/identity (Business tier+, 10 credits)
+- Automatic retries and error handling
+- Python 3.9+
+
+## Links
+- Website: https://tuteliq.ai
+- Documentation: https://docs.tuteliq.ai
+- PyPI: https://pypi.org/project/tuteliq/
+- GitHub: https://github.com/Tuteliq/python
