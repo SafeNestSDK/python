@@ -268,6 +268,7 @@ class GroomingResult:
     rationale: str
     risk_score: float
     recommended_action: str
+    message_analysis: Optional[list[MessageAnalysis]] = None
     language: Optional[str] = None
     language_status: Optional[str] = None
     credits_used: Optional[int] = None
@@ -277,6 +278,9 @@ class GroomingResult:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "GroomingResult":
         """Create from API response dictionary."""
+        msg_analysis = None
+        if "message_analysis" in data and data["message_analysis"]:
+            msg_analysis = [MessageAnalysis.from_dict(m) for m in data["message_analysis"]]
         return cls(
             grooming_risk=GroomingRisk(data["grooming_risk"]),
             confidence=data["confidence"],
@@ -284,6 +288,7 @@ class GroomingResult:
             rationale=data["rationale"],
             risk_score=data["risk_score"],
             recommended_action=data["recommended_action"],
+            message_analysis=msg_analysis,
             language=data.get("language"),
             language_status=data.get("language_status"),
             credits_used=data.get("credits_used"),
@@ -1234,6 +1239,26 @@ class DetectionInput:
 
 
 @dataclass
+class MessageAnalysis:
+    """Per-message analysis from conversation-aware detection."""
+
+    message_index: int
+    risk_score: float
+    flags: list[str]
+    summary: str
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "MessageAnalysis":
+        """Create from API response dictionary."""
+        return cls(
+            message_index=data["message_index"],
+            risk_score=data["risk_score"],
+            flags=data["flags"],
+            summary=data["summary"],
+        )
+
+
+@dataclass
 class DetectionCategory:
     """A detected category with tag and confidence."""
 
@@ -1277,6 +1302,7 @@ class DetectionResult:
     language_status: str
     evidence: Optional[list[DetectionEvidence]] = None
     age_calibration: Optional[AgeCalibration] = None
+    message_analysis: Optional[list[MessageAnalysis]] = None
     credits_used: Optional[int] = None
     processing_time_ms: Optional[float] = None
     external_id: Optional[str] = None
@@ -1304,6 +1330,9 @@ class DetectionResult:
                 age_group=ac.get("age_group"),
                 multiplier=ac.get("multiplier"),
             )
+        msg_analysis = None
+        if "message_analysis" in data and data["message_analysis"]:
+            msg_analysis = [MessageAnalysis.from_dict(m) for m in data["message_analysis"]]
         return cls(
             endpoint=data["endpoint"],
             detected=data["detected"],
@@ -1318,6 +1347,7 @@ class DetectionResult:
             language_status=data["language_status"],
             evidence=evidence,
             age_calibration=age_cal,
+            message_analysis=msg_analysis,
             credits_used=data.get("credits_used"),
             processing_time_ms=data.get("processing_time_ms"),
             external_id=data.get("external_id"),
