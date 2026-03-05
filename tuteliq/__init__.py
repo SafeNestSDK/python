@@ -26,6 +26,10 @@ from tuteliq.models import (
     Language,
     LanguageStatus,
     Tier,
+    VerificationMode,
+    DocumentType,
+    VerificationStatus,
+    VerificationSessionStatus,
     SUPPORTED_LANGUAGES,
     # Input types
     AnalysisContext,
@@ -45,6 +49,7 @@ from tuteliq.models import (
     UpdateWebhookInput,
     DetectionInput,
     AnalyseMultiInput,
+    CreateVerificationSessionInput,
     # Result types
     BullyingResult,
     GroomingResult,
@@ -69,6 +74,15 @@ from tuteliq.models import (
     AnalyseMultiSummary,
     VideoAnalysisResult,
     VideoSafetyFinding,
+    # Verification types
+    VerificationSession,
+    VerificationSessionResult,
+    FaceMatchResult,
+    LivenessResult,
+    AgeVerificationResult,
+    IdentityVerificationResult,
+    VerificationRetrieveResult,
+    IdentityRetrieveResult,
     # Webhook types
     Webhook,
     WebhookListResult,
@@ -122,7 +136,7 @@ from tuteliq.errors import (
     TierAccessError,
 )
 
-__version__ = "2.3.0"
+__version__ = "2.4.0"
 __all__ = [
     # Client
     "Tuteliq",
@@ -175,6 +189,10 @@ __all__ = [
     "LanguageStatus",
     "SUPPORTED_LANGUAGES",
     "Tier",
+    "VerificationMode",
+    "DocumentType",
+    "VerificationStatus",
+    "VerificationSessionStatus",
     "VideoAnalysisResult",
     "VideoSafetyFinding",
     # Voice/Image types
@@ -210,6 +228,16 @@ __all__ = [
     "RectifyDataResult",
     "AuditLogEntry",
     "AuditLogsResult",
+    # Verification types
+    "CreateVerificationSessionInput",
+    "VerificationSession",
+    "VerificationSessionResult",
+    "FaceMatchResult",
+    "LivenessResult",
+    "AgeVerificationResult",
+    "IdentityVerificationResult",
+    "VerificationRetrieveResult",
+    "IdentityRetrieveResult",
     # Voice streaming types
     "VoiceStreamConfig",
     "VoiceStreamHandlers",

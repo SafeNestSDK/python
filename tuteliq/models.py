@@ -112,6 +112,40 @@ class Detection(str, Enum):
     RADICALISATION = "radicalisation"
 
 
+class VerificationMode(str, Enum):
+    """Verification mode for age or identity verification sessions."""
+
+    AGE = "age"
+    IDENTITY = "identity"
+
+
+class DocumentType(str, Enum):
+    """Document type hint for verification sessions."""
+
+    PASSPORT = "passport"
+    ID_CARD = "id_card"
+    DRIVERS_LICENSE = "drivers_license"
+
+
+class VerificationStatus(str, Enum):
+    """Verification result status."""
+
+    VERIFIED = "verified"
+    FAILED = "failed"
+    NEEDS_REVIEW = "needs_review"
+
+
+class VerificationSessionStatus(str, Enum):
+    """Verification session lifecycle status."""
+
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    EXPIRED = "expired"
+    CANCELLED = "cancelled"
+
+
 SUPPORTED_LANGUAGES = list(Language)
 
 
@@ -1492,4 +1526,237 @@ class UsageMonthlyResult:
             rate_limit=data["rate_limit"],
             recommendations=data.get("recommendations"),
             links=data["links"],
+        )
+
+
+# =============================================================================
+# Verification
+# =============================================================================
+
+
+@dataclass
+class CreateVerificationSessionInput:
+    """Input for creating a verification session."""
+
+    mode: VerificationMode
+    document_type: Optional[DocumentType] = None
+    redirect_url: Optional[str] = None
+    external_id: Optional[str] = None
+    customer_id: Optional[str] = None
+    metadata: Optional[dict[str, Any]] = None
+
+
+@dataclass
+class VerificationSession:
+    """Result from creating a verification session."""
+
+    session_id: str
+    url: str
+    expires_at: str
+    mode: VerificationMode
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "VerificationSession":
+        """Create from API response dictionary."""
+        return cls(
+            session_id=data["session_id"],
+            url=data["mobile_url"],
+            expires_at=data["expires_at"],
+            mode=VerificationMode(data["mode"]),
+        )
+
+
+@dataclass
+class FaceMatchResult:
+    """Face comparison results."""
+
+    matched: bool
+    distance: float
+    confidence: float
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "FaceMatchResult":
+        """Create from API response dictionary."""
+        return cls(
+            matched=data["matched"],
+            distance=data["distance"],
+            confidence=data["confidence"],
+        )
+
+
+@dataclass
+class LivenessResult:
+    """Liveness check results."""
+
+    valid: bool
+    reason: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "LivenessResult":
+        """Create from API response dictionary."""
+        return cls(
+            valid=data["valid"],
+            reason=data.get("reason"),
+        )
+
+
+@dataclass
+class AgeVerificationResult:
+    """Result from age verification."""
+
+    verification_id: str
+    status: VerificationStatus
+    is_minor: Optional[bool]
+    face_match: Optional[FaceMatchResult]
+    liveness: LivenessResult
+    failure_reasons: list[str]
+    credits_used: int
+    age_bracket: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "AgeVerificationResult":
+        """Create from API response dictionary."""
+        face_match = None
+        if data.get("face_match"):
+            face_match = FaceMatchResult.from_dict(data["face_match"])
+        return cls(
+            verification_id=data["verification_id"],
+            status=VerificationStatus(data["status"]),
+            age_bracket=data.get("age_bracket"),
+            is_minor=data.get("is_minor"),
+            face_match=face_match,
+            liveness=LivenessResult.from_dict(data["liveness"]),
+            failure_reasons=data.get("failure_reasons", []),
+            credits_used=data.get("credits_used", 0),
+        )
+
+
+@dataclass
+class IdentityVerificationResult:
+    """Result from identity verification."""
+
+    verification_id: str
+    status: VerificationStatus
+    face_match: Optional[FaceMatchResult]
+    liveness: LivenessResult
+    failure_reasons: list[str]
+    credits_used: int
+    full_name: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    document_type: Optional[str] = None
+    country_code: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "IdentityVerificationResult":
+        """Create from API response dictionary."""
+        face_match = None
+        if data.get("face_match"):
+            face_match = FaceMatchResult.from_dict(data["face_match"])
+        return cls(
+            verification_id=data["verification_id"],
+            status=VerificationStatus(data["status"]),
+            full_name=data.get("full_name"),
+            date_of_birth=data.get("date_of_birth"),
+            document_type=data.get("document_type"),
+            country_code=data.get("country_code"),
+            face_match=face_match,
+            liveness=LivenessResult.from_dict(data["liveness"]),
+            failure_reasons=data.get("failure_reasons", []),
+            credits_used=data.get("credits_used", 0),
+        )
+
+
+@dataclass
+class VerificationSessionResult:
+    """Result from polling a verification session."""
+
+    session_id: str
+    status: VerificationSessionStatus
+    mode: VerificationMode
+    created_at: str
+    expires_at: str
+    age_result: Optional[AgeVerificationResult] = None
+    identity_result: Optional[IdentityVerificationResult] = None
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "VerificationSessionResult":
+        """Create from API response dictionary."""
+        age_result = None
+        if data.get("age_result"):
+            age_result = AgeVerificationResult.from_dict(data["age_result"])
+        identity_result = None
+        if data.get("identity_result"):
+            identity_result = IdentityVerificationResult.from_dict(data["identity_result"])
+        return cls(
+            session_id=data["session_id"],
+            status=VerificationSessionStatus(data["status"]),
+            mode=VerificationMode(data["mode"]),
+            created_at=data["created_at"],
+            expires_at=data["expires_at"],
+            age_result=age_result,
+            identity_result=identity_result,
+        )
+
+
+@dataclass
+class VerificationRetrieveResult:
+    """Result from retrieving a past age verification."""
+
+    verification_id: str
+    status: VerificationStatus
+    age: Optional[int]
+    is_minor: Optional[bool]
+    face_matched: Optional[bool]
+    face_confidence: Optional[float]
+    liveness_valid: bool
+    failure_reasons: list[str]
+    created_at: str
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "VerificationRetrieveResult":
+        """Create from API response dictionary."""
+        return cls(
+            verification_id=data["verification_id"],
+            status=VerificationStatus(data["status"]),
+            age=data.get("age"),
+            is_minor=data.get("is_minor"),
+            face_matched=data.get("face_matched"),
+            face_confidence=data.get("face_confidence"),
+            liveness_valid=data.get("liveness_valid", False),
+            failure_reasons=data.get("failure_reasons", []),
+            created_at=data["created_at"],
+        )
+
+
+@dataclass
+class IdentityRetrieveResult:
+    """Result from retrieving a past identity verification."""
+
+    verification_id: str
+    status: VerificationStatus
+    face_matched: Optional[bool]
+    face_confidence: Optional[float]
+    liveness_valid: bool
+    failure_reasons: list[str]
+    created_at: str
+    full_name: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    document_type: Optional[str] = None
+    country_code: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "IdentityRetrieveResult":
+        """Create from API response dictionary."""
+        return cls(
+            verification_id=data["verification_id"],
+            status=VerificationStatus(data["status"]),
+            full_name=data.get("full_name"),
+            date_of_birth=data.get("date_of_birth"),
+            document_type=data.get("document_type"),
+            country_code=data.get("country_code"),
+            face_matched=data.get("face_matched"),
+            face_confidence=data.get("face_confidence"),
+            liveness_valid=data.get("liveness_valid", False),
+            failure_reasons=data.get("failure_reasons", []),
+            created_at=data["created_at"],
         )
